@@ -37,9 +37,6 @@ namespace sysmon {
 CpuInfo::CpuInfo()
 {}
 
-CpuInfo::~CpuInfo()
-{}
-
 unsigned int CpuInfo::nproc() {
     update();
     return m_values.size();
@@ -59,7 +56,6 @@ void CpuInfo::ros_update(unsigned int proc, diagnostic_updater::DiagnosticStatus
     for (cpuinfoIter it = m_values[proc].begin(); it != m_values[proc].end(); ++it)
         dsw.add((*it).first, (*it).second);
 }
-
 
 int CpuInfo::update() {
     FILE * fp = std::fopen("/proc/cpuinfo", "r");
@@ -115,7 +111,7 @@ int CpuInfo::update() {
 
         }
 
-        if (!strcmp(key, "processor") && value)
+        if (value && !strcmp(key, "processor"))
             processor = atoi(value);
 
         if (processor >= m_values.size())
@@ -141,10 +137,5 @@ int CpuInfo::update() {
 
     return 0;
 }
-
-
-
-
-
 
 } // namespace sysmon

@@ -51,8 +51,7 @@ class CpuInfo {
         /*
          * Constructor
          */
-        explicit CpuInfo();
-        ~CpuInfo();
+        CpuInfo();
 
         /*
          * Get the number of available processors.
