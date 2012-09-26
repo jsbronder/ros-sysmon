@@ -1,0 +1,9 @@
+<stack>
+  <description brief="sysmon">
+    This node monitors the health of the current system
+  </description>
+  <author>Justin Bronder</author>
+  <license>BSD</license>
+  <url>http://github.com/jsbronder/ros-sysmon</url>
+</package>
+

@@ -1,0 +1,25 @@
+=== Summary ===
+
+ros-sysmon is a diagnostic publisher that monitors the status and
+utilization of various parts of the system such as the cpu, drives
+and memory.
+
+=== License ===
+The source code of this package is licensed under the BSD 3
+clause license.  See LICENSE.
+
+=== Building ===
+The environment must be setup such that ROS is functioning.  Then
+the standard cmake process will suffice.
+
+$ source /opt/ros/<distribution>/setup.sh
+$ mkdir build
+$ cd build
+$ cmake ../
+$ make
+
+If you want to install to a standard ROS location, call cmake
+with the following set:
+-DCMAKE_INSTALL_PREFIX=/opt/ros/<distribution>/<stack>/ros-sysmon
+
+# vim: ft=txt
