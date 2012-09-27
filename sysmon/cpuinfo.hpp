@@ -30,15 +30,9 @@
 #pragma once
 
 #include <string>
-#include <iostream>
-
-#include <boost/shared_ptr.hpp>
-
 #include <diagnostic_updater/diagnostic_updater.h>
 
 namespace sysmon {
-
-#define err(fmt...) fprintf(stderr, fmt);
 
 class CpuInfo {
     /*
@@ -74,8 +68,6 @@ class CpuInfo {
         int update();
 
         std::vector<cpuinfo> m_values;
-
-        friend std::ostream &operator<<(std::ostream &stream, const CpuInfo &ci);
 };
 
 } // namespace sysmon

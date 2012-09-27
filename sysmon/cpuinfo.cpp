@@ -27,8 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstdio>
 #include <cerrno>
+
+#include <iostream>
+#include <fstream>
+#include <list>
+#include <boost/algorithm/string.hpp>
 
 #include "cpuinfo.hpp"
 
@@ -45,95 +49,60 @@ unsigned int CpuInfo::nproc() {
 void CpuInfo::ros_update(unsigned int proc, diagnostic_updater::DiagnosticStatusWrapper &dsw)
 {
     if (proc > m_values.size()) {
-        err("Request for unknown processor id %d\n", proc);
+        dsw.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Unknown processor id");
         return;
     }
 
-    update();
+    if (update()) {
+        dsw.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Update failed");
+        return;
+    }
 
     dsw.summary(diagnostic_msgs::DiagnosticStatus::OK, "OK");
-
     for (cpuinfoIter it = m_values[proc].begin(); it != m_values[proc].end(); ++it)
         dsw.add((*it).first, (*it).second);
 }
 
 int CpuInfo::update() {
-    FILE * fp = std::fopen("/proc/cpuinfo", "r");
-    if (!fp)
-        return errno;
+    std::ifstream fp("/proc/cpuinfo");
 
-    char * line = NULL;
-    size_t len = 0;
-    int lineno = 0;
-    int processor = 0;
+    if (!fp.is_open()) {
+        ROS_ERROR("%s:  Failed to open /proc/cpuinfo", __func__);
+        return EIO;
+    }
 
-    while (true) {
-        ssize_t read = getline(&line, &len, fp);
-        char * key = NULL;
-        char * clear_whitespace = NULL;
-        char * value = NULL;
+    std::string line;
+    unsigned int processor = 0;
+    while (fp.good()) {
+        getline(fp, line);
 
-        lineno += 1;
+        std::list<std::string> res;
+        boost::algorithm::split(res, line, boost::is_any_of(":"));
 
-        if (read == -1)
-            break;
-
-        if (read <= 1)
+        if (res.size() < 2)
             continue;
 
-        key = strsep(&line, ":");
+        std::string key = res.front();
+        boost::trim(key);
 
-        if (!key) {
-            err("Failed to find first key: line %d\n", lineno);
-            continue;
-        }
+        res.pop_front();
+        std::string value = boost::algorithm::join(res, " ");
+        boost::trim(value);
 
-        if (!line || *line == '\0' || *line == '\n') {
-            value = NULL;
-        } else {
-            clear_whitespace = line - 2;
-            while (*clear_whitespace == ' ' || *clear_whitespace == '\t')
-            {
-                *clear_whitespace = '\0';
-                clear_whitespace--;
-            }
-
-            value = line + 1;
-            if (*value == '\n' || *value == '\0') {
-                err("Failed to parse key for '%s': line %d\n", key, lineno);
-                continue;
-            }
-
-            clear_whitespace = value;
-            while (*clear_whitespace != '\n' && *clear_whitespace != '\0')
-                clear_whitespace++;
-            *clear_whitespace = '\0';
-
-        }
-
-        if (value && !strcmp(key, "processor"))
-            processor = atoi(value);
+        if (key == "processor")
+            processor = boost::lexical_cast<unsigned int>(value);
 
         if (processor >= m_values.size())
             m_values.push_back(std::map<std::string, std::string>());
 
-        cpuinfoIter it = m_values[processor].find(std::string(key));
+        cpuinfoIter it = m_values[processor].find(key);
         if (it != m_values[processor].end())
             m_values[processor].erase(key);
 
-        m_values[processor].insert(
-            std::pair<std::string, std::string>(
-                std::string(key),
-                std::string(value ? value : "")));
-
-        free(key);
-        line = NULL;
+        m_values[processor].insert(std::pair<std::string, std::string>(key, value));
     }
 
-    if (line)
-        free(line);
-
-    std::fclose(fp);
+    fp.close();
 
     return 0;
 }
