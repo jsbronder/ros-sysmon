@@ -27,45 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <unistd.h>
+#pragma once
 
-#include "cpuinfo.hpp"
-#include "loadavg.hpp"
-#include "meminfo.hpp"
+#include <string>
+#include <diagnostic_updater/diagnostic_updater.h>
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "sysmon");
-    ros::NodeHandle nh;
-    diagnostic_updater::Updater updater;
+namespace sysmon {
 
-    char hostname[HOST_NAME_MAX];
-    int r = gethostname(hostname, HOST_NAME_MAX-1);
-    if (r)
-        updater.setHardwareID("unknown");
-    else
-        updater.setHardwareID(hostname);
+class MemInfo {
+    /*
+     * Parser for /proc/meminfo.  Reads the key value pairs from the file and
+     * publishes them via ROS diagnostics.
+     */
+    public:
+        typedef std::map<std::string, std::string> meminfo;
+        typedef std::map<std::string, std::string>::const_iterator meminfoIter;
 
-    sysmon::CpuInfo cpuinfo;
-    unsigned int nproc = cpuinfo.nproc();
+        /*
+         * Constructor
+         */
+        MemInfo();
 
-    for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[16];
-        snprintf(buf, 15, "Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuInfo::ros_update, cpuinfo, i, _1));
-    }
+        /*
+         * Update the ROS diagnostics.
+         */
+        void ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw);
 
-    sysmon::LoadAvg loadavg;
-    updater.add("Load Average", &loadavg, &sysmon::LoadAvg::ros_update);
+    private:
+        /*
+         * Read the latest value from /proc/meminfo.
+         *
+         * @return  - 0 on success, appropriate errno otherwise.
+         */
+        int update();
 
-    sysmon::MemInfo meminfo;
-    updater.add("Memory", &meminfo, &sysmon::MemInfo::ros_update);
+        meminfo m_values;
+};
 
-    while (nh.ok()) {
-        ros::Duration(1).sleep();
-        updater.update();
-    }
-
-    return 0;
-}
+} // namespace sysmon
 
