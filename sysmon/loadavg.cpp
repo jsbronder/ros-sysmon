@@ -27,41 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <unistd.h>
+#include <cerrno>
 
-#include "cpuinfo.hpp"
+#include <iostream>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+
 #include "loadavg.hpp"
 
-int main(int argc, char **argv)
+namespace sysmon {
+
+LoadAvg::LoadAvg()
+{}
+
+void LoadAvg::ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw)
 {
-    ros::init(argc, argv, "sysmon");
-    ros::NodeHandle nh;
-    diagnostic_updater::Updater updater;
-
-    char hostname[HOST_NAME_MAX];
-    int r = gethostname(hostname, HOST_NAME_MAX-1);
-    if (r)
-        updater.setHardwareID("unknown");
-    else
-        updater.setHardwareID(hostname);
-
-    sysmon::CpuInfo cpuinfo;
-    unsigned int nproc = cpuinfo.nproc();
-
-    for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[16];
-        snprintf(buf, 15, "Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuInfo::ros_update, cpuinfo, i, _1));
+    if (update() || m_load.size() < 3) {
+        dsw.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "Update failed");
+        return;
     }
 
-    sysmon::LoadAvg loadavg;
-    updater.add("Load Average", &loadavg, &sysmon::LoadAvg::ros_update);
+    dsw.summary(diagnostic_msgs::DiagnosticStatus::OK, "OK");
+    static const char * names[] = {"1 minute", "5 minute", "15 minute"};
 
-    while (nh.ok()) {
-        ros::Duration(1).sleep();
-        updater.update();
+    for (unsigned int i = 0; i < 3; ++i)
+        dsw.add(names[i], m_load[i]);
+}
+
+int LoadAvg::update() {
+    std::ifstream fp("/proc/loadavg");
+
+    if (!fp.is_open()) {
+        ROS_ERROR("%s:  Failed to open /proc/loadavg", __func__);
+        return EIO;
     }
+
+    std::string line;
+    while (fp.good()) {
+        getline(fp, line);
+
+        std::list<std::string> res;
+        boost::algorithm::split(res, line, boost::is_any_of(" \t"));
+
+        if (res.size() < 3)
+            continue;
+
+        while (res.size() > 3)
+            res.pop_back();
+
+        m_load.clear();
+        for (std::list<std::string>::const_iterator it = res.begin(); it != res.end(); ++it)
+            m_load.push_back(*it);
+    }
+
+    fp.close();
 
     return 0;
 }
 
+} // namespace sysmon
