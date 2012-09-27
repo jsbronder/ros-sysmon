@@ -95,11 +95,10 @@ int CpuInfo::update() {
         if (processor >= m_values.size())
             m_values.push_back(std::map<std::string, std::string>());
 
-        cpuinfoIter it = m_values[processor].find(key);
-        if (it != m_values[processor].end())
-            m_values[processor].erase(key);
-
-        m_values[processor].insert(std::pair<std::string, std::string>(key, value));
+        if (m_values[processor].find(key) != m_values[processor].end())
+            m_values[processor][key] = value;
+        else
+            m_values[processor].insert(std::pair<std::string, std::string>(key, value));
     }
 
     fp.close();

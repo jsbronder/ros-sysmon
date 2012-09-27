@@ -36,7 +36,8 @@ namespace sysmon {
 
 class CpuInfo {
     /*
-     * Parser for /proc/cpuinfo
+     * Parser for /proc/cpuinfo.  Reads the key value pairs from the file
+     * and publishes them via ROS diagnostics
      */
     public:
         typedef std::map<std::string, std::string> cpuinfo;
