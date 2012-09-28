@@ -31,6 +31,7 @@
 
 #include "cpuinfo.hpp"
 #include "cputime.hpp"
+#include "diskusage.hpp"
 #include "loadavg.hpp"
 #include "meminfo.hpp"
 
@@ -70,6 +71,14 @@ int main(int argc, char **argv)
         char buf[32];
         snprintf(buf, 31, "Cpu Time - Processor %d", i);
         updater.add(buf, boost::bind(&sysmon::CpuTime::ros_update, cputime, i, _1));
+    }
+
+    sysmon::DiskUsage diskusage;
+    std::vector<std::string> disks = diskusage.disks();
+    for (std::vector<std::string>::const_iterator it = disks.begin(); it != disks.end(); ++it) {
+        char buf[64];
+        snprintf(buf, 63, "Disk Usage - %s", (*it).c_str());
+        updater.add(buf, boost::bind(&sysmon::DiskUsage::ros_update, diskusage, *it, _1));
     }
 
     while (nh.ok()) {
