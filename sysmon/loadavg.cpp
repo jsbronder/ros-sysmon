@@ -54,7 +54,8 @@ void LoadAvg::ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw)
         dsw.add(names[i], m_load[i]);
 }
 
-int LoadAvg::update() {
+int LoadAvg::update()
+{
     std::ifstream fp("/proc/loadavg");
 
     if (!fp.is_open()) {

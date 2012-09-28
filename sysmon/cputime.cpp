@@ -41,7 +41,8 @@ namespace sysmon {
 CpuTime::CpuTime()
 {}
 
-unsigned int CpuTime::nproc() {
+unsigned int CpuTime::nproc()
+{
     update();
     return m_values.size();
 }
@@ -69,7 +70,8 @@ void CpuTime::ros_update(int proc, diagnostic_updater::DiagnosticStatusWrapper &
     }
 }
 
-int CpuTime::update() {
+int CpuTime::update()
+{
     std::ifstream fp("/proc/stat");
 
     if (!fp.is_open()) {

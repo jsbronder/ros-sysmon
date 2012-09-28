@@ -41,7 +41,8 @@ namespace sysmon {
 CpuInfo::CpuInfo()
 {}
 
-unsigned int CpuInfo::nproc() {
+unsigned int CpuInfo::nproc()
+{
     update();
     return m_values.size();
 }
@@ -63,7 +64,8 @@ void CpuInfo::ros_update(unsigned int proc, diagnostic_updater::DiagnosticStatus
         dsw.add((*it).first, (*it).second);
 }
 
-int CpuInfo::update() {
+int CpuInfo::update()
+{
     std::ifstream fp("/proc/cpuinfo");
 
     if (!fp.is_open()) {

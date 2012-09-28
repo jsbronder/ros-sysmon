@@ -53,7 +53,8 @@ void MemInfo::ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw)
         dsw.add((*it).first, (*it).second);
 }
 
-int MemInfo::update() {
+int MemInfo::update()
+{
     std::ifstream fp("/proc/meminfo");
 
     if (!fp.is_open()) {
