@@ -27,56 +27,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <unistd.h>
+#pragma once
 
-#include "cpuinfo.hpp"
-#include "cputime.hpp"
-#include "loadavg.hpp"
-#include "meminfo.hpp"
+#include <string>
+#include <diagnostic_updater/diagnostic_updater.h>
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "sysmon");
-    ros::NodeHandle nh;
-    diagnostic_updater::Updater updater;
+namespace sysmon {
 
-    char hostname[HOST_NAME_MAX];
-    int r = gethostname(hostname, HOST_NAME_MAX-1);
-    if (r)
-        updater.setHardwareID("unknown");
-    else
-        updater.setHardwareID(hostname);
+class CpuTime {
+    /*
+     * Parser for /proc/stat.  Reads the cpu time related columns
+     * and publishes them via ROS diagnostics
+     */
+    public:
+        typedef std::map<std::string, std::string> cputime;
+        typedef std::map<std::string, std::string>::const_iterator cputimeIter;
 
-    sysmon::CpuInfo cpuinfo;
-    unsigned int nproc = cpuinfo.nproc();
+        /*
+         * Constructor
+         */
+        CpuTime();
 
-    for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[16];
-        snprintf(buf, 15, "Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuInfo::ros_update, cpuinfo, i, _1));
-    }
+        /*
+         * Get the number of available processors.
+         *
+         * @return  - number of processors on the system.
+         */
+        unsigned int nproc();
 
-    sysmon::LoadAvg loadavg;
-    updater.add("Load Average", &loadavg, &sysmon::LoadAvg::ros_update);
+        /*
+         * Update the ROS diagnostics.
+         *
+         * @param proc  - Value from -1 to nproc().  -1 represents the total usage
+         *              across all cpus/processors.
+         */
+        void ros_update(int proc, diagnostic_updater::DiagnosticStatusWrapper &dsw);
 
-    sysmon::MemInfo meminfo;
-    updater.add("Memory", &meminfo, &sysmon::MemInfo::ros_update);
+    private:
+        /*
+         * Read the latest value from /proc/stat.
+         *
+         * @return  - 0 on success, appropriate errno otherwise.
+         */
+        int update();
 
-    sysmon::CpuTime cputime;
-    updater.add("CPU time - Total", boost::bind(&sysmon::CpuTime::ros_update, cputime, -1, _1));
+        std::vector<cputime> m_values;
+        cputime              m_totals;
+};
 
-    nproc = cputime.nproc();
-    for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[32];
-        snprintf(buf, 31, "Cpu Time - Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuTime::ros_update, cputime, i, _1));
-    }
-
-    while (nh.ok()) {
-        ros::Duration(1).sleep();
-        updater.update();
-    }
-
-    return 0;
-}
+} // namespace sysmon
 

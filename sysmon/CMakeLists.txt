@@ -12,6 +12,7 @@ link_directories(${libs_only_L})
 
 add_executable(sysmon
     cpuinfo.cpp
+    cputime.cpp
     loadavg.cpp
     meminfo.cpp
     main.cpp)
