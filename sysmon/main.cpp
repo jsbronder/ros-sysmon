@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sstream>
 #include <unistd.h>
 
 #include "cpuinfo.hpp"
@@ -52,9 +53,9 @@ int main(int argc, char **argv)
     unsigned int nproc = cpuinfo.nproc();
 
     for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[16];
-        snprintf(buf, 15, "Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuInfo::ros_update, cpuinfo, i, _1));
+        std::ostringstream s;
+        s << "CPU Info - Processor " << i;
+        updater.add(s.str(), boost::bind(&sysmon::CpuInfo::ros_update, cpuinfo, i, _1));
     }
 
     sysmon::LoadAvg loadavg;
@@ -64,21 +65,21 @@ int main(int argc, char **argv)
     updater.add("Memory", &meminfo, &sysmon::MemInfo::ros_update);
 
     sysmon::CpuTime cputime;
-    updater.add("CPU time - Total", boost::bind(&sysmon::CpuTime::ros_update, cputime, -1, _1));
+    updater.add("CPU Time - Total", boost::bind(&sysmon::CpuTime::ros_update, cputime, -1, _1));
 
     nproc = cputime.nproc();
     for (unsigned int i = 0; i < nproc; ++i) {
-        char buf[32];
-        snprintf(buf, 31, "Cpu Time - Processor %d", i);
-        updater.add(buf, boost::bind(&sysmon::CpuTime::ros_update, cputime, i, _1));
+        std::ostringstream s;
+        s << "Cpu Time - Processor " << i;
+        updater.add(s.str(), boost::bind(&sysmon::CpuTime::ros_update, cputime, i, _1));
     }
 
     sysmon::DiskUsage diskusage;
     std::vector<std::string> disks = diskusage.disks();
     for (std::vector<std::string>::const_iterator it = disks.begin(); it != disks.end(); ++it) {
-        char buf[64];
-        snprintf(buf, 63, "Disk Usage - %s", (*it).c_str());
-        updater.add(buf, boost::bind(&sysmon::DiskUsage::ros_update, diskusage, *it, _1));
+        std::ostringstream s;
+        s << "Disk Usage - " << (*it);
+        updater.add(s.str(), boost::bind(&sysmon::DiskUsage::ros_update, diskusage, *it, _1));
     }
 
     while (nh.ok()) {
