@@ -33,13 +33,15 @@
 #include <fstream>
 #include <list>
 #include <boost/algorithm/string.hpp>
-
+#include <XmlRpcValue.h>
 #include "cpuinfo.hpp"
 
 namespace sysmon {
 
 CpuInfo::CpuInfo()
-{}
+{
+    fill_whitelist();
+}
 
 unsigned int CpuInfo::nproc()
 {
@@ -60,8 +62,14 @@ void CpuInfo::ros_update(unsigned int proc, diagnostic_updater::DiagnosticStatus
     }
 
     dsw.summary(diagnostic_msgs::DiagnosticStatus::OK, "OK");
-    for (cpuinfoIter it = m_values[proc].begin(); it != m_values[proc].end(); ++it)
-        dsw.add((*it).first, (*it).second);
+    for (cpuinfoIter it = m_values[proc].begin(); it != m_values[proc].end(); ++it) {
+        if (m_whitelist.size()) {
+            if (std::find(m_whitelist.begin(), m_whitelist.end(), (*it).first) != m_whitelist.end())
+                dsw.add((*it).first, (*it).second);
+        } else {
+            dsw.add((*it).first, (*it).second);
+        }
+    }
 }
 
 int CpuInfo::update()
@@ -106,6 +114,26 @@ int CpuInfo::update()
     fp.close();
 
     return 0;
+}
+
+void CpuInfo::fill_whitelist()
+{
+    if (!ros::param::has("~cpuinfo/whitelist"))
+        return;
+
+    XmlRpc::XmlRpcValue whitelist;
+    ros::param::get("~cpuinfo/whitelist", whitelist);
+    if (whitelist.getType() != XmlRpc::XmlRpcValue::TypeArray) {
+        ROS_ERROR("%s:  Invalid value (not TypeArray) for ~cpuinfo/whitelist", __func__);
+        return;
+    }
+
+    for (int i = 0; i < whitelist.size(); ++i) {
+        if (whitelist[i].getType() != XmlRpc::XmlRpcValue::TypeString)
+            continue;
+
+        m_whitelist.insert(static_cast<std::string>(whitelist[i]));
+    }
 }
 
 } // namespace sysmon

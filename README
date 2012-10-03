@@ -22,4 +22,9 @@ If you want to install to a standard ROS location, call cmake
 with the following set:
 -DCMAKE_INSTALL_PREFIX=/opt/ros/<distribution>/<stack>/ros-sysmon
 
+=== ROS Parameters ===
+~/cpuinfo/whitelist:  List of keys from /proc/cpuinfo that should
+    be published.  This is a list of XmlRpcValue::TypeStrings's.
+    If unspecified everything is published.
+
 # vim: ft=txt

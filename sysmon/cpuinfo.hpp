@@ -37,7 +37,12 @@ namespace sysmon {
 class CpuInfo {
     /*
      * Parser for /proc/cpuinfo.  Reads the key value pairs from the file
-     * and publishes them via ROS diagnostics
+     * and publishes them via ROS diagnostics.
+     *
+     * ROS Parameters:
+     *
+     * ~/cpuinfo/whitelist: List of keys from /proc/cpuinfo that should be
+     *                      published.  This is a list of XmlRpcValue::TypeString.
      */
     public:
         typedef std::map<std::string, std::string> cpuinfo;
@@ -68,7 +73,15 @@ class CpuInfo {
          */
         int update();
 
+        /*
+         * Query the parameter server for the whitelist of keys that should
+         * be published.
+         */
+        void fill_whitelist();
+
         std::vector<cpuinfo> m_values;
+
+        std::set<std::string> m_whitelist;
 };
 
 } // namespace sysmon
