@@ -27,4 +27,9 @@ with the following set:
     be published.  This is a list of XmlRpcValue::TypeStrings's.
     If unspecified everything is published.
 
+~/meminfo/whitelist:  List of keys from /proc/meminfo that should
+    be published.  This is a list of XmlRpcValue::TypeStrings's.
+    If unspecified everything is published.
+
+
 # vim: ft=txt

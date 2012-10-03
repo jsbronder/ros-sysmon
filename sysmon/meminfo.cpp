@@ -33,13 +33,16 @@
 #include <fstream>
 #include <list>
 #include <boost/algorithm/string.hpp>
+#include <XmlRpcValue.h>
 
 #include "meminfo.hpp"
 
 namespace sysmon {
 
 MemInfo::MemInfo()
-{}
+{
+    fill_whitelist();
+}
 
 void MemInfo::ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw)
 {
@@ -49,8 +52,14 @@ void MemInfo::ros_update(diagnostic_updater::DiagnosticStatusWrapper &dsw)
     }
 
     dsw.summary(diagnostic_msgs::DiagnosticStatus::OK, "OK");
-    for (meminfoIter it = m_values.begin(); it != m_values.end(); ++it)
-        dsw.add((*it).first, (*it).second);
+    for (meminfoIter it = m_values.begin(); it != m_values.end(); ++it) {
+        if (m_whitelist.size()) {
+            if (std::find(m_whitelist.begin(), m_whitelist.end(), (*it).first) != m_whitelist.end())
+                dsw.add((*it).first, (*it).second);
+        } else {
+            dsw.add((*it).first, (*it).second);
+        }
+    }
 }
 
 int MemInfo::update()
@@ -89,5 +98,26 @@ int MemInfo::update()
 
     return 0;
 }
+
+void MemInfo::fill_whitelist()
+{
+    if (!ros::param::has("~meminfo/whitelist"))
+        return;
+
+    XmlRpc::XmlRpcValue whitelist;
+    ros::param::get("~meminfo/whitelist", whitelist);
+    if (whitelist.getType() != XmlRpc::XmlRpcValue::TypeArray) {
+        ROS_ERROR("%s:  Invalid value (not TypeArray) for ~meminfo/whitelist", __func__);
+        return;
+    }
+
+    for (int i = 0; i < whitelist.size(); ++i) {
+        if (whitelist[i].getType() != XmlRpc::XmlRpcValue::TypeString)
+            continue;
+
+        m_whitelist.insert(static_cast<std::string>(whitelist[i]));
+    }
+}
+
 
 } // namespace sysmon

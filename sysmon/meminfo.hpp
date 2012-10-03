@@ -38,8 +38,13 @@ class MemInfo {
     /*
      * Parser for /proc/meminfo.  Reads the key value pairs from the file and
      * publishes them via ROS diagnostics.
+     *
+     * ROS Parameters:
+     *
+     * ~/meminfo/whitelist: List of keys from /proc/meminfo that should be
+     *                      published.  This is a list of XmlRpcValue::TypeString.
      */
-    public:
+     public:
         typedef std::map<std::string, std::string> meminfo;
         typedef std::map<std::string, std::string>::const_iterator meminfoIter;
 
@@ -61,7 +66,15 @@ class MemInfo {
          */
         int update();
 
+        /*
+         * Query the parameter server for the whitelist of keys that should
+         * be published.
+         */
+        void fill_whitelist();
+
         meminfo m_values;
+
+        std::set<std::string> m_whitelist;
 };
 
 } // namespace sysmon
