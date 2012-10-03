@@ -75,6 +75,8 @@ DiskUsage::DiskUsage()
     m_fs_blacklist.insert("nfs4");
     m_fs_blacklist.insert("autofs");
     m_fs_blacklist.insert("nfsd");
+
+    fill_mountlist();
 }
 
 std::vector<std::string> DiskUsage::disks()
@@ -131,8 +133,12 @@ int DiskUsage::update()
         if (!mnt->mnt_dir)
             continue;
 
-        if (std::find(m_fs_blacklist.begin(), m_fs_blacklist.end(), mnt->mnt_type) != m_fs_blacklist.end())
+        if (m_mountlist.size()) {
+            if (std::find(m_mountlist.begin(), m_mountlist.end(), mnt->mnt_dir) == m_mountlist.end())
+                continue;
+        } else if (std::find(m_fs_blacklist.begin(), m_fs_blacklist.end(), mnt->mnt_type) != m_fs_blacklist.end()) {
             continue;
+        }
 
         r = statvfs(mnt->mnt_dir, &fs);
         if (r) {
@@ -157,6 +163,26 @@ int DiskUsage::update()
     }
     endmntent(mtab);
     return 0;
+}
+
+void DiskUsage::fill_mountlist()
+{
+    if (!ros::param::has("~diskusage/mountlist"))
+        return;
+
+    XmlRpc::XmlRpcValue mountlist;
+    ros::param::get("~diskusage/mountlist", mountlist);
+    if (mountlist.getType() != XmlRpc::XmlRpcValue::TypeArray) {
+        ROS_ERROR("%s:  Invalid value (not TypeArray) for ~diskusage/mountlist", __func__);
+        return;
+    }
+
+    for (int i = 0; i < mountlist.size(); ++i) {
+        if (mountlist[i].getType() != XmlRpc::XmlRpcValue::TypeString)
+            continue;
+
+        m_mountlist.insert(static_cast<std::string>(mountlist[i]));
+    }
 }
 
 } // namespace sysmon

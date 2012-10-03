@@ -31,5 +31,10 @@ with the following set:
     be published.  This is a list of XmlRpcValue::TypeStrings's.
     If unspecified everything is published.
 
+~/diskusage/mountlist:  List of mountpoints that should be
+    monitored if they are active.  This is a list of
+    XmlRpcValue::TypeStrings's.  If unspecified then every active
+    local mountpoint that is not of a type known to be a psuedo
+    kernel filesystem is monitored.
 
-# vim: ft=txt
+# vim: ft=txt 

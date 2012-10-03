@@ -36,7 +36,17 @@ namespace sysmon {
 
 class DiskUsage {
     /*
-     * Monitors disk usage and publishes via ROS diagnostics
+     * Monitors disk usage and publishes via ROS diagnostics.  By default a
+     * large number of non local or psuedo kernel filesystems are ignored (see
+     * m_fs_blacklist).  This may be overwritten by using the mountlist
+     * parameter.  If the mountlist is not specified then every filesystem that
+     * is not of a type blacklisted will be monitored.
+     *
+     * ROS Parameters:
+     *
+     * ~/diskusage/mountlist:   List of mountpoints that should be monitored if
+     *                          they are active.  This is a list of
+     *                          XmlRpcValue::TypeString.
      */
     public:
         typedef std::map<std::string, std::string> diskusage;
@@ -69,11 +79,18 @@ class DiskUsage {
         int update();
 
         /*
+         * Query parameter server for the list of mountpoints to monitor
+         */
+        void fill_mountlist();
+
+        /*
          * List of filesystem types we ignore.
          */
         std::set<std::string> m_fs_blacklist;
 
         std::map<std::string, diskusage> m_values;
+
+        std::set<std::string> m_mountlist;
 };
 
 } // namespace sysmon
